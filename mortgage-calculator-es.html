@@ -8,16 +8,6 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-   
-
-          <!-- Favicon -->
-    <link rel="icon" href="https://bucket.mlcdn.com/a/3336/3336910/images/fa62e06dd2b6ed2d1d9e77e5dd944bef2904d5d1.png">
-
-
-
-    
-    
-    
     <style>
         :root {
             --primary: #DF1783;
@@ -231,13 +221,44 @@
             right: 15px;
             color: black;
             text-shadow: none;
-            font-size: 25px;
+            font-size: 20px;
             font-weight: 500;
             font-style: italic;
             text-align: center;
             z-index: 1;
         }
 
+        /* Progress Bar Styles */
+        .progress-container {
+            margin-bottom: 25px;
+        }
+        .progress-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        .progress-bar {
+            height: 5px;
+            background-color: var(--border-color);
+            border-radius: 3px;
+            position: relative;
+        }
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--primary-light), var(--primary));
+            border-radius: 3px;
+            width: 0%;
+            transition: width 0.5s ease-in-out;
+            position: relative;
+        }
+        .progress-emoji {
+            position: absolute;
+            font-size: 30px;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 10;
+        }
 
         /* Calendar View Styles */
         #calendarView {
@@ -267,7 +288,7 @@
         #timersList { list-style: none; padding: 0; }
         #timersList li { background-color: var(--bg); padding: 15px; border-radius: 8px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
 
-        /* Toast Notification */
+        /* Toast & Congratulations Notification */
         .toast {
             position: fixed;
             bottom: -100px; /* Start hidden */
@@ -285,6 +306,16 @@
             bottom: 30px;
             opacity: 1;
         }
+        .congratulations {
+            text-align: center;
+            padding: 40px;
+            background: linear-gradient(135deg, var(--primary-light), var(--accent));
+            border-radius: 10px;
+            margin-top: 30px;
+            box-shadow: var(--shadow);
+        }
+        .congratulations h2 { color: white; font-size: 32px; margin-bottom: 20px; }
+        .congratulations p { font-size: 18px; color: var(--secondary); margin-bottom: 20px; }
 
     </style>
 </head>
@@ -305,7 +336,10 @@
                     <input type="password" id="loginPassword" required>
                 </div>
                 <button type="submit" class="btn-primary" data-lang-key="login">Login</button>
-                <p class="form-switch" data-lang-key="noAccount">Don't have an account? <a id="showRegister">Register</a></p>
+                <p class="form-switch">
+                    <span data-lang-key="noAccount">Don't have an account? </span>
+                    <a id="showRegister" data-lang-key="register" href="#">Register</a>
+                </p>
             </form>
             <form id="registerForm" class="hidden">
                 <h2 data-lang-key="register">Register</h2>
@@ -331,11 +365,16 @@
                             <label><input type="checkbox" class="multiselect" value="Vacation Home"> <span data-lang-key="vacationHome">Vacation Home</span></label>
                             <label><input type="checkbox" class="multiselect" value="Commercial"> <span data-lang-key="commercial">Commercial Real Estate</span></label>
                              <label><input type="checkbox" class="multiselect" value="Land"> <span data-lang-key="land">Land/Lot Purchase</span></label>
+                            <label><input type="checkbox" class="multiselect" value="Short-term Rental"> <span data-lang-key="shortTermRental">Short-term Rentals</span></label>
+                            <label><input type="checkbox" class="multiselect" value="Long-term Rental"> <span data-lang-key="longTermRental">Long-term Rentals</span></label>
                         </div>
                     </div>
                 </div>
                 <button type="submit" class="btn-primary" data-lang-key="register">Register</button>
-                <p class="form-switch" data-lang-key="hasAccount">Already have an account? <a id="showLogin">Login</a></p>
+                <p class="form-switch">
+                    <span data-lang-key="hasAccount">Already have an account? </span>
+                    <a id="showLogin" data-lang-key="login" href="#">Login</a>
+                </p>
             </form>
         </div>
     </div>
@@ -404,7 +443,7 @@
                     <button id="calculateBtn" class="btn-primary" data-lang-key="calculate">Calculate</button>
                     
                     <div class="image-container">
-                        <img src="https://bucket.mlcdn.com/a/3336/3336910/images/83391fb2ede80c6a711cfc2148eaadc686519508.png" alt="Inspirational Image">
+                        <img src="https://bucket.mlcdn.com/a/3336/3336910/images/5766605da687e128a40ce24693abaf0597694c2c.png" alt="Inspirational Image">
                         <p id="inspirationalQuote" class="image-quote"></p>
                     </div>
                 </div>
@@ -437,6 +476,21 @@
                     <div class="chart-container">
                         <canvas id="paymentChart"></canvas>
                     </div>
+
+                     <!-- Progress Bar -->
+                    <div id="progressContainer" class="progress-container hidden">
+                        <div class="progress-header">
+                            <span data-lang-key="paymentProgress">Payment Progress</span>
+                        </div>
+                        <div class="progress-bar">
+                            <span style="position: absolute; left: 0; top: -35px; font-size: 30px;">📍</span>
+                            <span style="position: absolute; right: 0; top: -30px; font-size: 30px;">🏠</span>
+                            <div class="progress-fill" id="progressFill" style="width: 0%">
+                                <div class="progress-emoji" id="progressEmoji">💸</div>
+                            </div>
+                        </div>
+                    </div>
+
                     <div class="action-buttons">
                         <button id="showAmortizationBtn" class="btn-secondary" data-lang-key="showAmortization">Show Amortization</button>
                         <button id="exportPdfBtn" class="btn-secondary" data-lang-key="exportPdf">Export to PDF</button>
@@ -455,6 +509,7 @@
                                 <th data-lang-key="principal">Principal</th>
                                 <th data-lang-key="interest">Interest</th>
                                 <th data-lang-key="balance">Balance</th>
+                                <th data-lang-key="paid">Paid</th>
                             </tr>
                         </thead>
                         <tbody id="amortizationTableBody">
@@ -469,7 +524,7 @@
             <h2 data-lang-key="paymentCalendar">Payment Calendar</h2>
             <div class="calendar-header">
                 <button id="prevYearBtn"><i class="fas fa-chevron-left"></i></button>
-                <h3 id="calendarYear">2025</h3>
+                <h3 id="calendarYear">2024</h3>
                 <button id="nextYearBtn"><i class="fas fa-chevron-right"></i></button>
             </div>
             <div id="calendarGrid"></div>
@@ -514,6 +569,12 @@
                 </div>
             </div>
         </div>
+
+        <!-- Congratulations Section -->
+        <div id="congratulationsSection" class="congratulations hidden">
+             <h2 data-lang-key="congratulations">Congratulations! 🎉</h2>
+             <p data-lang-key="congratsMessage">You've successfully paid off your mortgage and now own your property!</p>
+        </div>
     </div>
     
     <div id="toast" class="toast hidden"></div>
@@ -545,6 +606,10 @@
             const addTimerForm = document.getElementById('addTimerForm');
             const timersList = document.getElementById('timersList');
             const saveCalculationBtn = document.getElementById('saveCalculationBtn');
+            const progressContainer = document.getElementById('progressContainer');
+            const progressFill = document.getElementById('progressFill');
+            const progressEmoji = document.getElementById('progressEmoji');
+            const congratulationsSection = document.getElementById('congratulationsSection');
             let currentCalendarYear = new Date().getFullYear();
             
             // --- Language Translations ---
@@ -557,6 +622,8 @@
                     firstHome: "Comprador de Primera Vivienda", investment: "Propiedades de Inversión",
                     vacationHome: "Casa de Vacaciones", commercial: "Bienes Raíces Comerciales",
                     land: "Compra de Terreno/Lote", hasAccount: "¿Ya tienes una cuenta? ",
+                    shortTermRental: "Alquileres a Corto Plazo",
+                    longTermRental: "Alquileres a Largo Plazo",
                     // Calculator
                     loanDetails: "Detalles del Préstamo", loanAmount: "Monto del Préstamo",
                     interestRate: "Tasa de Interés (% anual)", loanTerm: "Plazo del Préstamo (años)",
@@ -568,7 +635,9 @@
                     showAmortization: "Mostrar Amortización", exportPdf: "Exportar a PDF",
                     saveCalculation: "Guardar Cálculo",
                     amortizationSchedule: "Calendario de Amortización", month: "Mes", payment: "Pago",
-                    principal: "Capital", interest: "Interés", balance: "Balance",
+                    principal: "Capital", interest: "Interés", balance: "Balance", paid: "Pagado",
+                    paymentProgress: "Progreso de Pagos", congratulations: "¡Felicidades! 🎉",
+                    congratsMessage: "¡Ha pagado con éxito su hipoteca y ahora es dueño de su propiedad!",
                     // Calendar & Timer
                     paymentCalendar: "Calendario de Pagos",
                     calendarComingSoon: "Añada un préstamo/temporizador para ver las fechas de pago aquí. Luego puede sincronizar o descargar su calendario.",
@@ -578,12 +647,13 @@
                     syncGoogle: "Sincronizar con Google Calendar", downloadIcal: "Descargar Archivo iCal",
                     addTimerFirst: "Por favor, añada un temporizador de préstamo primero.", timerAdded: "¡Temporizador añadido con éxito!",
                     timers: "Temporizadores", calculator: "Calculadora",
-                    paid: "Pagado", due: "Pendiente", late: "Atrasado"
+                    due: "Pendiente", late: "Atrasado"
                 }
             };
 
             let currentLang = 'es';
             let currentUser = null;
+            let paidMonths = 0;
 
             // --- CORE APP LOGIC ---
 
@@ -662,7 +732,7 @@
                     return;
                 }
 
-                const userData = { fullName, email, password, interests: selectedInterests, timers: [] };
+                const userData = { fullName, email, password, interests: selectedInterests, timers: [], paidMonths: 0 };
                 localStorage.setItem(`user_${email}`, JSON.stringify(userData));
                 
                 const scriptURL = 'YOUR_GOOGLE_APPS_SCRIPT_URL_HERE'; 
@@ -684,6 +754,7 @@
                  updateTopNavForLoginState();
                  updateDateTime();
                  setInterval(updateDateTime, 60000);
+                 loadPaymentProgress();
                  loadTimers();
                  switchView('calculatorView');
             }
@@ -708,6 +779,12 @@
 
                 [calculatorView, calendarView, timerView].forEach(view => view.classList.add('hidden'));
                 document.getElementById(viewName).classList.remove('hidden');
+
+                if (viewName !== 'calculatorView') {
+                    progressContainer.classList.add('hidden');
+                    amortizationSection.classList.add('hidden');
+                    congratulationsSection.classList.add('hidden');
+                }
                 
                 if (viewName === 'calendarView') {
                     renderCalendar(currentCalendarYear);
@@ -828,6 +905,9 @@
             }
             
             function generateAmortizationTable(){
+                progressContainer.classList.remove('hidden');
+                updateProgressBar();
+
                 const principal = parseFloat(loanAmountSlider.value);
                 const monthlyInterestRate = parseFloat(interestRateSlider.value) / 100 / 12;
                 const numberOfPayments = parseInt(loanTermSlider.value) * 12;
@@ -840,11 +920,71 @@
                     const interestPayment = balance * monthlyInterestRate;
                     const principalPayment = monthlyPayment - interestPayment;
                     balance -= principalPayment;
-                    tableHTML += `<tr><td>${i}</td><td>${formatCurrency(monthlyPayment, 'DOP')}</td><td>${formatCurrency(principalPayment, 'DOP')}</td><td>${formatCurrency(interestPayment, 'DOP')}</td><td>${formatCurrency(balance < 0 ? 0 : balance, 'DOP')}</td></tr>`;
+                    const isChecked = i <= paidMonths ? 'checked' : '';
+                    tableHTML += `<tr>
+                                    <td>${i}</td>
+                                    <td>${formatCurrency(monthlyPayment, 'DOP')}</td>
+                                    <td>${formatCurrency(principalPayment, 'DOP')}</td>
+                                    <td>${formatCurrency(interestPayment, 'DOP')}</td>
+                                    <td>${formatCurrency(balance < 0 ? 0 : balance, 'DOP')}</td>
+                                    <td><input type="checkbox" data-month="${i}" onchange="handlePaymentCheck(this)" ${isChecked}></td>
+                                  </tr>`;
                 }
                 document.getElementById('amortizationTableBody').innerHTML = tableHTML;
                 document.getElementById('amortizationSection').classList.remove('hidden');
             }
+
+            // Must be available globally for onchange attribute
+            window.handlePaymentCheck = function(checkbox) {
+                const month = parseInt(checkbox.dataset.month);
+                
+                const checkboxes = document.querySelectorAll('#amortizationTableBody input[type="checkbox"]');
+                let highestChecked = 0;
+                checkboxes.forEach(cb => {
+                    if (cb.checked) {
+                        const cbMonth = parseInt(cb.dataset.month);
+                        if (cbMonth > highestChecked) {
+                            highestChecked = cbMonth;
+                        }
+                    }
+                });
+                paidMonths = highestChecked;
+
+                currentUser.paidMonths = paidMonths;
+                localStorage.setItem(`user_${currentUser.email}`, JSON.stringify(currentUser));
+                updateProgressBar();
+            }
+
+            function loadPaymentProgress() {
+                if (currentUser && currentUser.paidMonths) {
+                    paidMonths = currentUser.paidMonths;
+                } else {
+                    paidMonths = 0;
+                }
+            }
+            
+            function updateProgressBar() {
+                const totalPayments = parseInt(loanTermSlider.value) * 12;
+                if(totalPayments === 0) return;
+
+                const progressPercent = Math.min(100, (paidMonths / totalPayments) * 100);
+                progressFill.style.width = `${progressPercent}%`;
+                
+                const emojiPosition = Math.min(progressPercent, 100);
+                progressEmoji.style.left = `${emojiPosition}%`;
+
+                if (progressPercent >= 100) {
+                    progressEmoji.textContent = '🏠';
+                    congratulationsSection.classList.remove('hidden');
+                } else if (progressPercent >= 50) {
+                    progressEmoji.textContent = '💰';
+                    congratulationsSection.classList.add('hidden');
+                } else {
+                    progressEmoji.textContent = '💸';
+                    congratulationsSection.classList.add('hidden');
+                }
+            }
+
 
             function updateInspirationalQuote() {
                 const quotes = [
@@ -1051,8 +1191,8 @@
             }
             
             // --- EVENT LISTENERS ---
-            showRegister.addEventListener('click', () => { loginForm.classList.add('hidden'); registerForm.classList.remove('hidden'); });
-            showLogin.addEventListener('click', () => { registerForm.classList.add('hidden'); loginForm.classList.remove('hidden'); });
+            showRegister.addEventListener('click', (e) => { e.preventDefault(); loginForm.classList.add('hidden'); registerForm.classList.remove('hidden'); });
+            showLogin.addEventListener('click', (e) => { e.preventDefault(); registerForm.classList.add('hidden'); loginForm.classList.remove('hidden'); });
             multiselectLabel.addEventListener('click', () => { multiselectOptions.style.display = multiselectOptions.style.display === 'block' ? 'none' : 'block'; });
             document.addEventListener('click', (e) => { if (!e.target.closest('.multiselect-container')) multiselectOptions.style.display = 'none'; });
             loginForm.addEventListener('submit', handleLogin);
@@ -1093,3 +1233,5 @@
     </script>
 </body>
 </html>
+
+
